@@ -1,6 +1,12 @@
-// Hikvision HTTP Data Transmission Receiver - Alarm
-
-// Enable "Notify Surveillance Center" under Linkage Method for each event
+/**
+ * Hikvision HTTP Data Transmission Receiver - Alarm
+ * 
+ * 
+ * ** Setup **
+ * 1. Configuration -> Network -> Advanced Settings -> HTTP Listening: DestinationIP = [HubitatIP], URL = "/", Port = 39501
+ * 2. Enable "Notify Surveillance Center" under Linkage Method for each event
+ *
+ */
 
 import groovy.transform.Field
 
