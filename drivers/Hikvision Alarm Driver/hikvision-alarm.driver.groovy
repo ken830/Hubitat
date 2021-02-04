@@ -1,6 +1,7 @@
 /**
  * Hikvision HTTP Data Transmission Receiver - Alarm
  * 
+ * Copyright 2021 Kenneth Leung (ken830)
  * 
  * ** Setup **
  * 1. Configuration -> Network -> Advanced Settings -> HTTP Listening: DestinationIP = [HubitatIP], URL = "/", Port = 39501
