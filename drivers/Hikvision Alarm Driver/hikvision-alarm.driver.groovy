@@ -30,7 +30,7 @@ metadata {
 preferences {
     input name: "hikIP", type: "string", title:"<b>Camera IP Address</b>", description: "<div><i></i></div><br>", required: true
     input name: "resetTime", type: "number", title:"<b>Alert Reset Time</b> (sec)", description: "<div><i></i></div><br>", defaultValue: 0
-	input name: "eventTypeEnable", type: "enum", title:"<b>Event Type Filter</b> (Multiple Allowed)", description: "<div><i></i></div><br>", multiple: true , options: eventTypes
+	input name: "eventTypeFilter", type: "enum", title:"<b>Event Type Filter</b> (Multiple Allowed)", description: "<div><i></i></div><br>", multiple: true , options: eventTypes
 	input name: "eventTypeInvert", type: "bool", title:"<b>Invert Event Type Filter</b>", description: "<div><i>DISABLED: Trigger Only on Event Types Selected in Filter<br>ENABLED: Trigger on All Events Except Those Selected in Filter</i></div><br>", defaultValue: true
 
 	
@@ -61,7 +61,7 @@ def configure() {
 	//Configure DNI
 	setNetworkAddress()
 	
-	state.eventEnables = "$settings.eventTypeEnable"
+	state.eventFilter = "$settings.eventTypeFilter"
 	
 }
 
@@ -83,17 +83,23 @@ def parse(String description) {
 	log.info "Event Type: ${eventType}"
 	state.lastEventType = eventType
 	
-	log.info "Alert Active"
-	sendEvent(name: "motion", value: "active")
-	state.motionAlarm = true
+    //log.info (eventType in settings.eventTypeFilter)
+	if ((eventType in settings.eventTypeFilter) ^ settings.eventTypeInvert) {
+		//log.info "Triggered"
+		log.info "Alert Active"
+		sendEvent(name: "motion", value: "active")
+		//state.motionAlarm = true
+		
+		//Trigger the inactive state in the future
+		//Note: Hikvision cameras appear to only send messages (~1/sec) when an alarm is in the active state.
+		//		We need to reset this virtual device's current state with a pre-determined
+		//		timeout period after the last alarm message was received.
+		runIn(2 + settings.resetTime.toInteger(), alertInactive, overwrite)
+	}
+	else{
+		log.info "Filtered Event - Not Triggered"
+	}
 	
-	//Trigger the inactive state in the future
-	//Note: Hikvision cameras appear to only messages (~1/sec) when an alarm is in the active state.
-	//		We need to reset this virtual device's current state with a pre-determined
-	//		timeout period after the last alarm message was received.
-	runIn(2 + settings.resetTime.toInteger(), alertInactive, overwrite)
-	
-	state.lastReport = now()
 }
 
 void setNetworkAddress() {
@@ -117,25 +123,6 @@ void alertInactive() {
 	resetAlerts()
 }
 
-void watchdog() {
-    if (state.lastReport != null) {
-        // check if there have been any messages in the last 1 minute
-        if(state.lastReport >= now() - (1 * 60 * 1000)) {
-            // OKAY
-            logDebug "watchdog: OKAY"
-        }
-        else {
-            // FAULT
-            log.warn "watchdog: FAULT"
-            // if we don"t receive any messages within 1 minute
-            // set state to inactive
-			//sendEvent(name: "motion", value: "inactive")
-        }
-    }
-    else {
-        log.info "No previous reports. Cannot determine health."
-    }
-}
 
 private Integer convertHexToInt(hex) {
     return hex ? new BigInteger(hex[2..-1], 16) : 0
@@ -160,5 +147,5 @@ void logDebug(str) {
     }
 }
 
-@Field static List eventTypes = ["IO","VMD","tamperdetection","diskfull","diskerror","nicbroken","ipconflict","illaccess","linedetection","fielddetection","videomismatch","badvideo","PIR"]
-
+// eventType list compiled from a variety of cameras (DS-2CD2432F-IW, DS-2CD2532F-IS, DS-2CD2347G1-LU, ) and likely missing some from other more capable cameras.
+@Field static List eventTypes = ["IO","VMD","tamperdetection","diskfull","diskerror","nicbroken","ipconflict","illaccess","linedetection","fielddetection","videomismatch","badvideo","facedetection","unattendedBaggage","attendedBaggage","storageDetection","scenechangedetection","faceSnap","PIR"]
