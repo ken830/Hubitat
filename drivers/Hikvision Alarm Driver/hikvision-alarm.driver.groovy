@@ -1,7 +1,10 @@
 /**
  * Hikvision HTTP Data Transmission Receiver - Alarm
- * 
- * Copyright 2021 Kenneth Leung (ken830)
+ * Hubitat Device Driver
+ *
+ * https://raw.githubusercontent.com/ogiewon/Hubitat/master/Drivers/logitech-harmony-hub-parent.src/logitech-harmony-hub-parent.groovy
+ *
+ * Copyright 2021 Kenneth Leung (kleung1, ken830)
  * 
  * ** Hikvision Camera Setup **
  * 1. Configuration -> Network -> Advanced Settings -> HTTP Listening: DestinationIP = [HubitatIP], URL = "/", Port = 39501
@@ -33,8 +36,7 @@ preferences {
 	input name: "eventTypeFilter", type: "enum", title:"<b>Event Type Filter</b> (Multiple Allowed)", description: "<div><i></i></div><br>", multiple: true , options: eventTypes
 	input name: "eventTypeInvert", type: "bool", title:"<b>Invert Event Type Filter</b>", description: "<div><i>DISABLED: Trigger Only on Event Types Selected in Filter<br>ENABLED: Trigger on All Events Except Those Selected in Filter</i></div><br>", defaultValue: true
 
-	
-	input name: "loggingEnabled", type: "bool", title: "<b>Enable Logging</b>", description: "<div><i></i></div><br>", defaultValue: false
+	input name: "debugLoggingEnabled", type: "bool", title: "<b>Enable Debug Logging</b>", description: "<div><i>Disables in 15 minutes</i></div><br>", defaultValue: false
 }
 
 def installed() {
@@ -61,8 +63,10 @@ def configure() {
 	//Configure DNI
 	setNetworkAddress()
 	
-	state.eventFilter = "$settings.eventTypeFilter"
+	// disable debug logging in 30 minutes
+    if (settings.debugLoggingEnabled) runIn(1800, disableLogging)
 	
+	state.eventFilter = "$settings.eventTypeFilter"
 }
 
 def resetAlerts() {
@@ -133,19 +137,16 @@ private String convertIPtoHex(ipAddress) {
     return hex.toUpperCase()
 }
 
-private String utc2000ToDate(int seconds) {
-    int unix200Time = 946684800
-    // <UNIX time> = <2000 time> + <January 1, 2000 UNIX time>
-    int unixSeconds = seconds + unix200Time
-    long unixMilliseconds = unixSeconds * 1000L
-    new Date(unixMilliseconds).format("yyyy-MM-dd h:mm", location.timeZone)
+void disableLogging() {
+	log.info 'Logging disabled.'
+	device.updateSetting('debugLoggingEnabled',[value:'false',type:'bool'])
 }
 
 void logDebug(str) {
-    if (loggingEnabled) {
+    if (debugLoggingEnabled) {
         log.debug str
     }
 }
 
-// eventType list compiled from a variety of cameras (DS-2CD2432F-IW, DS-2CD2532F-IS, DS-2CD2347G1-LU, ) and likely missing some from other more capable cameras.
+// eventType list compiled from a variety of Hikvision cameras I have on-hand (DS-2CD2432F-IW, DS-2CD2532F-IS, & DS-2CD2347G1-LU) and likely missing some from other more capable cameras.
 @Field static List eventTypes = ["IO","VMD","tamperdetection","diskfull","diskerror","nicbroken","ipconflict","illaccess","linedetection","fielddetection","videomismatch","badvideo","facedetection","unattendedBaggage","attendedBaggage","storageDetection","scenechangedetection","faceSnap","PIR"]
