@@ -22,8 +22,11 @@ metadata {
 		author: "Kenneth L",
 		description: "HTTP Data Transmission Receiver - Alarm"
 	) {
+		capability "Sensor"
+		
 		capability "MotionSensor"
 		capability "PresenceSensor"
+		capability "ContactSensor"
 		
         command "resetAlerts"
 
@@ -33,8 +36,8 @@ metadata {
 preferences {
     input name: "hikIP", type: "string", title:"<b>Camera IP Address</b>", description: "<div><i></i></div><br>", required: true
     input name: "resetTime", type: "number", title:"<b>Alert Reset Time</b> (sec)", description: "<div><i></i></div><br>", defaultValue: 0
-	input name: "eventTypeFilter", type: "enum", title:"<b>Event Type Filter</b> (Multiple Allowed)", description: "<div><i></i></div><br>", multiple: true , options: eventTypes
-	input name: "eventTypeInvert", type: "bool", title:"<b>Invert Event Type Filter</b>", description: "<div><i>DISABLED: Trigger Only on Event Types Selected in Filter<br>ENABLED: Trigger on All Events Except Those Selected in Filter</i></div><br>", defaultValue: true
+	input name: "eventTypeFilterMotion", type: "enum", title:"<b>Event Type Filter</b> (Multiple Allowed)", description: "<div><i></i></div><br>", multiple: true , options: eventTypes
+	input name: "eventTypeInvertMotion", type: "bool", title:"<b>Invert Event Type Filter</b>", description: "<div><i>DISABLED: Trigger Only on Event Types Selected in Filter<br>ENABLED: Trigger on All Events Except Those Selected in Filter</i></div><br>", defaultValue: true
 
 	input name: "debugLoggingEnabled", type: "bool", title: "<b>Enable Debug Logging</b>", description: "<div><i>Disables in 15 minutes</i></div><br>", defaultValue: false
 }
@@ -66,12 +69,14 @@ def configure() {
 	// disable debug logging in 30 minutes
     if (settings.debugLoggingEnabled) runIn(1800, disableLogging)
 	
-	state.eventFilter = "$settings.eventTypeFilter"
+	state.eventFilterMotion = "$settings.eventTypeFilterMotion"
 }
 
 def resetAlerts() {
 	//Clear current states
 	sendEvent(name: "motion", value: "inactive")
+	sendEvent(name: "presence", value: "not present")
+	sendEvent(name: "contact", value: "closed")
 	
 	//state.motionAlarm = false
 }
@@ -87,11 +92,13 @@ def parse(String description) {
 	log.info "Event Type: ${eventType}"
 	state.lastEventType = eventType
 	
-    //log.info (eventType in settings.eventTypeFilter)
-	if ((eventType in settings.eventTypeFilter) ^ settings.eventTypeInvert) {
+    //log.info (eventType in settings.eventTypeFilterMotion)
+	if ((eventType in settings.eventTypeFilterMotion) ^ settings.eventTypeInvertMotion) {
 		//log.info "Triggered"
 		log.info "Alert Active"
 		sendEvent(name: "motion", value: "active")
+		sendEvent(name: "presence", value: "present")
+		sendEvent(name: "contact", value: "open")
 		//state.motionAlarm = true
 		
 		//Trigger the inactive state in the future
