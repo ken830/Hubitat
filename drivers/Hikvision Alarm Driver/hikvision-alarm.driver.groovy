@@ -39,9 +39,9 @@ preferences {
 
 	input name: "debugLoggingEnabled", type: "bool", title: "<b>Enable Debug Logging</b>", description: "<div><i>Disables in 15 minutes</i></div><br>", defaultValue: false
 
-	input name: "resetTimeMotion", type: "number", title:"<b>Alert Reset Time</b> (sec)", description: "<div><i></i></div><br>", range: "0..604800", defaultValue: 0
-	input name: "resetTimePresence", type: "number", title:"<b>Alert Reset Time</b> (sec)", description: "<div><i></i></div><br>", range: "0..604800", defaultValue: 0
-	input name: "resetTimeContact", type: "number", title:"<b>Alert Reset Time</b> (sec)", description: "<div><i></i></div><br>", range: "0..604800", defaultValue: 0
+	input name: "resetTimeMotion", type: "number", title:"<b>Motion Sensor</b>", description: "<div><i>Alert Reset Time</i></div><br>", range: "0..604800", defaultValue: 0
+	input name: "resetTimePresence", type: "number", title:"<b>Presence Sensor</b>", description: "<div><i>Alert Reset Time</i></div><br>", range: "0..604800", defaultValue: 0
+	input name: "resetTimeContact", type: "number", title:"<b>Contact Sensor</b>", description: "<div><i>Alert Reset Time</i></div><br>", range: "0..604800", defaultValue: 0
 	
 	input name: "eventTypeFilterMotion", type: "enum", title:"<b>Motion Sensor</b>", description: "<div><i>Event Type Filter(Multiple Selections Allowed)</i></div><br>", multiple: true , options: eventTypes
 	input name: "eventTypeInvertMotion", type: "bool", title:"<b>Motion Sensor</b>", description: "<div><i>Exclusive Filter (Trigger on All Events Except Those Selected)</i></div><br>", defaultValue: true
