@@ -36,10 +36,25 @@ metadata {
 preferences {
     input name: "hikIP", type: "string", title:"<b>Camera IP Address</b>", description: "<div><i></i></div><br>", required: true
     input name: "resetTime", type: "number", title:"<b>Alert Reset Time</b> (sec)", description: "<div><i></i></div><br>", defaultValue: 0
-	input name: "eventTypeFilterMotion", type: "enum", title:"<b>Event Type Filter</b> (Multiple Allowed)", description: "<div><i></i></div><br>", multiple: true , options: eventTypes
-	input name: "eventTypeInvertMotion", type: "bool", title:"<b>Invert Event Type Filter</b>", description: "<div><i>DISABLED: Trigger Only on Event Types Selected in Filter<br>ENABLED: Trigger on All Events Except Those Selected in Filter</i></div><br>", defaultValue: true
 
 	input name: "debugLoggingEnabled", type: "bool", title: "<b>Enable Debug Logging</b>", description: "<div><i>Disables in 15 minutes</i></div><br>", defaultValue: false
+
+	input name: "resetTimeMotion", type: "number", title:"<b>Alert Reset Time</b> (sec)", description: "<div><i></i></div><br>", range: "0..604800", defaultValue: 0
+	input name: "resetTimePresence", type: "number", title:"<b>Alert Reset Time</b> (sec)", description: "<div><i></i></div><br>", range: "0..604800", defaultValue: 0
+	input name: "resetTimeContact", type: "number", title:"<b>Alert Reset Time</b> (sec)", description: "<div><i></i></div><br>", range: "0..604800", defaultValue: 0
+	
+	input name: "eventTypeFilterMotion", type: "enum", title:"<b>Motion Sensor</b>", description: "<div><i>Event Type Filter(Multiple Selections Allowed)</i></div><br>", multiple: true , options: eventTypes
+	input name: "eventTypeInvertMotion", type: "bool", title:"<b>Motion Sensor</b>", description: "<div><i>Exclusive Filter (Trigger on All Events Except Those Selected)</i></div><br>", defaultValue: true
+	input name: "sensorInvertMotion",    type: "bool", title:"<b>Motion Sensor</b>", description: "<div><i>Invert Sensor Output State</i></div><br>", defaultValue: false
+	
+	input name: "eventTypeFilterPresence", type: "enum", title:"<b>Presence Sensor</b>", description: "<div><i>Event Type Filter(Multiple Selections Allowed)</i></div><br>", multiple: true , options: eventTypes
+	input name: "eventTypeInvertPresence", type: "bool", title:"<b>Presence Sensor</b>", description: "<div><i>Exclusive Filter(Trigger on All Events Except Those Selected)</i></div><br>", defaultValue: true
+	input name: "sensorInvertPresence",    type: "bool", title:"<b>Presence Sensor</b>", description: "<div><i>Invert Sensor Output State</i></div><br>", defaultValue: false
+	
+	input name: "eventTypeFilterContact", type: "enum", title:"<b>Contact Sensor</b>", description: "<div><i>Event Type Filter(Multiple Selections Allowed)</i></div><br>", multiple: true , options: eventTypes
+	input name: "eventTypeInvertContact", type: "bool", title:"<b>Contact Sensor</b>", description: "<div><i>Exclusive Filter(Trigger on All Events Except Those Selected)</i></div><br>", defaultValue: true
+	input name: "sensorInvertContact",    type: "bool", title:"<b>Contact Sensor</b>", description: "<div><i>Invert Sensor Output State</i></div><br>", defaultValue: false
+	
 }
 
 def installed() {
@@ -70,6 +85,9 @@ def configure() {
     if (settings.debugLoggingEnabled) runIn(1800, disableLogging)
 	
 	state.eventFilterMotion = "$settings.eventTypeFilterMotion"
+	state.eventFilterPresence = "$settings.eventTypeFilterPresence"
+	state.eventFilterContact = "$settings.eventTypeFilterContact"
+
 }
 
 def resetAlerts() {
