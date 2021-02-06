@@ -7,8 +7,24 @@
  * Copyright 2021 Kenneth Leung (kleung1, ken830)
  * 
  * ** Hikvision Camera Setup **
- * 1. Configuration -> Network -> Advanced Settings -> HTTP Listening: DestinationIP = [HubitatIP], URL = "/", Port = 39501
+ * 1. Configuration -> Network -> Advanced Settings -> HTTP Listening: DestinationIP = <HubitatHubIP>, URL = "/", Port = 39501
  * 2. Enable "Notify Surveillance Center" under Linkage Method for each event
+ *
+ * ** Device Driver Setup **
+ * 1. Install driver on hub
+ * 2. Add Virtual Device and Select this Driver 
+ * 3. Enter Camera IP Address and click "Save Preferences"
+ * 4. Optionally, configure the sensors (see notes below)
+ *
+ * ** Notes **
+ * - Three independent sensor capabilities: Motion, Presence, & Contact
+ * - Each sensor has the following independent settings:
+ * 		- Event Type Filter
+ *		- Inclusive vs Exclusive Filter Setting
+ *		- Sensor State Inversion Setting
+ *      - Alert Reset Time
+ * - By default, the filters are empty and exclusive, so all event types will trigger all three sensors.
+ * - To disable a sensor, leave the filter empty and make it inclusive
  *
  */
 
@@ -19,7 +35,7 @@ metadata {
     definition(
 		name: "Hikvision Alarm",
 		namespace: "ken830",
-		author: "Kenneth L",
+		author: "Kenneth Leung",
 		description: "HTTP Data Transmission Receiver - Alarm"
 	) {
 		capability "Sensor"
@@ -92,10 +108,26 @@ def configure() {
 
 def resetAlerts() {
 	//Clear current states
-	sendEvent(name: "motion", value: "inactive")
-	sendEvent(name: "presence", value: "not present")
-	sendEvent(name: "contact", value: "closed")
+	if (settings.sensorInvertMotion){
+		sendEvent(name: "motion", value: "active")
+	}
+	else {
+		sendEvent(name: "motion", value: "inactive")
+	}
 	
+	if (settings.sensorInvertPresence){
+		sendEvent(name: "presence", value: "present")
+		}
+	else {
+		sendEvent(name: "presence", value: "not present")
+	}
+	
+	if (settings.sensorInvertContact){
+		sendEvent(name: "contact", value: "open")
+	}
+	else {
+		sendEvent(name: "contact", value: "closed")
+	}
 	//state.motionAlarm = false
 }
 
