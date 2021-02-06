@@ -87,9 +87,37 @@ def updated() {
 
 def configure() {
 	unschedule()
-	
+
 	//Clear all state variables
 	state.clear()
+
+	if (settings.sensorInvertMotion){
+		state.motionOFF = "active"
+		state.motionON = "inactive"
+	}
+	else {
+		state.motionOFF = "inactive"
+		state.motionON = "active"
+	}
+	
+	if (settings.sensorInvertPresence){
+		state.presenceOFF = "present"
+		state.presenceON = "not present"
+	}
+	else {
+		state.presenceOFF = "not present"
+		state.presenceON = "present"
+	}
+	
+	if (settings.sensorInvertContact){
+		state.contactOFF = "open"
+		state.contactON = "closed"
+	}
+	else {
+		state.contactOFF = "closed"
+		state.contactON = "open"
+	}
+	
 	
 	//Clear all existing alerts
 	resetAlerts()
@@ -104,30 +132,21 @@ def configure() {
 	state.eventFilterPresence = "$settings.eventTypeFilterPresence"
 	state.eventFilterContact = "$settings.eventTypeFilterContact"
 
+
 }
 
 def resetAlerts() {
 	//Clear current states
-	if (settings.sensorInvertMotion){
-		sendEvent(name: "motion", value: "active")
-	}
-	else {
-		sendEvent(name: "motion", value: "inactive")
-	}
 	
-	if (settings.sensorInvertPresence){
-		sendEvent(name: "presence", value: "present")
-		}
-	else {
-		sendEvent(name: "presence", value: "not present")
-	}
+	log.info state.motionOFF
+
 	
-	if (settings.sensorInvertContact){
-		sendEvent(name: "contact", value: "open")
-	}
-	else {
-		sendEvent(name: "contact", value: "closed")
-	}
+	//sendEvent(name: "motion", value: "$motionOFF")
+	sendEvent(name: "motion", value: "$state.motionOFF")
+	sendEvent(name: "presence", value: "$state.presenceOFF")
+	sendEvent(name: "contact", value: "$state.contactOFF")
+	
+	
 	//state.motionAlarm = false
 }
 
