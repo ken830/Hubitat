@@ -2,10 +2,13 @@
  * Hikvision HTTP Data Transmission Receiver - Alarm
  * Hubitat Device Driver
  *
- * https://raw.githubusercontent.com/ogiewon/Hubitat/master/Drivers/logitech-harmony-hub-parent.src/logitech-harmony-hub-parent.groovy
+ * https://raw.githubusercontent.com/ken830/Hubitat/main/drivers/Hikvision%20Alarm%20Driver/hikvision-alarm.driver.groovy
  *
  * Copyright 2021 Kenneth Leung (kleung1, ken830)
  * 
+ * **Description **
+ * Driver to receive alarms from Hikvision cameras with the "HTTP Listening"/"HTTP Data Transmission" feature.
+ *
  * ** Hikvision Camera Setup **
  * 1. Configuration -> Network -> Advanced Settings -> HTTP Listening: DestinationIP = <HubitatHubIP>, URL = "/", Port = 39501
  * 2. Enable "Notify Surveillance Center" under Linkage Method for each event
@@ -91,6 +94,7 @@ def configure() {
 	//Clear all state variables
 	state.clear()
 
+	//Set state variables
 	if (settings.sensorInvertMotion){
 		state.motionOFF = "active"
 		state.motionON = "inactive"
@@ -118,36 +122,25 @@ def configure() {
 		state.contactON = "open"
 	}
 	
-	
+	state.eventFilterMotion = "$settings.eventTypeFilterMotion"
+	state.eventFilterPresence = "$settings.eventTypeFilterPresence"
+	state.eventFilterContact = "$settings.eventTypeFilterContact"
+
 	//Clear all existing alerts
 	resetAlerts()
 	
 	//Configure DNI
 	setNetworkAddress()
-	
+
 	// disable debug logging in 30 minutes
     if (settings.debugLoggingEnabled) runIn(1800, disableLogging)
-	
-	state.eventFilterMotion = "$settings.eventTypeFilterMotion"
-	state.eventFilterPresence = "$settings.eventTypeFilterPresence"
-	state.eventFilterContact = "$settings.eventTypeFilterContact"
-
-
 }
 
 def resetAlerts() {
 	//Clear current states
-	
-	log.info state.motionOFF
-
-	
-	//sendEvent(name: "motion", value: "$motionOFF")
 	sendEvent(name: "motion", value: "$state.motionOFF")
 	sendEvent(name: "presence", value: "$state.presenceOFF")
-	sendEvent(name: "contact", value: "$state.contactOFF")
-	
-	
-	//state.motionAlarm = false
+	sendEvent(name: "contact", value: "$state.contactOFF")	
 }
 
 def parse(String description) {
@@ -165,9 +158,10 @@ def parse(String description) {
 	if ((eventType in settings.eventTypeFilterMotion) ^ settings.eventTypeInvertMotion) {
 		//log.info "Triggered"
 		log.info "Alert Active"
-		sendEvent(name: "motion", value: "active")
-		sendEvent(name: "presence", value: "present")
-		sendEvent(name: "contact", value: "open")
+		//sendEvent(name: "motion", value: "active")
+		sendEvent(name: "motion", value: "$motionON")
+		sendEvent(name: "presence", value: "$state.presenceON")
+		sendEvent(name: "contact", value: "$state.contactON")
 		//state.motionAlarm = true
 		
 		//Trigger the inactive state in the future
@@ -226,3 +220,27 @@ void logDebug(str) {
 
 // eventType list compiled from a variety of Hikvision cameras I have on-hand (DS-2CD2432F-IW, DS-2CD2532F-IS, & DS-2CD2347G1-LU) and likely missing some from other more capable cameras.
 @Field static List eventTypes = ["IO","VMD","tamperdetection","diskfull","diskerror","nicbroken","ipconflict","illaccess","linedetection","fielddetection","videomismatch","badvideo","facedetection","unattendedBaggage","attendedBaggage","storageDetection","scenechangedetection","faceSnap","PIR"]
+
+/*
+Basic/Smart Event Names in the Camera's GUI:
+
+"IO" = (Local) Alarm Input
+"VMD" = (Video) Motion Detection
+"tamperdections" = Video Tampering ??
+"diskfull" = HDD Full
+"diskerror" = HDD Error
+"nicbroken" = Network Disconnected
+"ipconflict" = IP Address Conflicted
+"illaccess" = Illegal Login
+"linedetection" = Line Crossing Detection
+"fielddetection" = Intrusion Detection ??
+"videomismatch" = 
+"badvideo" = 
+"facedetection" = Face Detection
+"unattendedBaggage" = Unattended Baggage Detection
+"attendedBaggage" = Object Removal Detection ??
+"storageDetection"
+"scenechangedetection" = Scene Change Detection
+"faceSnap"
+"PIR" = PIR Alarm
+*/
