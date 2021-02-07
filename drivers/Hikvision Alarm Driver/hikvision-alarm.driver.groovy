@@ -54,8 +54,8 @@ metadata {
 
 preferences {
     input name: "hikIP", type: "string", title:"<b>Camera IP Address</b>", description: "<div><i></i></div><br>", required: true
-    input name: "resetTime", type: "number", title:"<b>Alert Reset Time</b> (sec)", description: "<div><i></i></div><br>", defaultValue: 0
-
+    
+	input name: "infoLoggingEnabled", type: "bool", title: "<b>Enable Info Logging</b>", description: "<div><i></i></div><br>", defaultValue: true
 	input name: "debugLoggingEnabled", type: "bool", title: "<b>Enable Debug Logging</b>", description: "<div><i>Disables in 15 minutes</i></div><br>", defaultValue: false
 
 	input name: "resetTimeMotion", type: "number", title:"<b>Motion Sensor</b>", description: "<div><i>Alert Reset Time</i></div><br>", range: "0..604800", defaultValue: 0
@@ -126,21 +126,36 @@ def configure() {
 	state.eventFilterPresence = "$settings.eventTypeFilterPresence"
 	state.eventFilterContact = "$settings.eventTypeFilterContact"
 
-	//Clear all existing alerts
+	// Clear all existing alerts
 	resetAlerts()
 	
-	//Configure DNI
+	// Configure DNI
 	setNetworkAddress()
 
-	// disable debug logging in 30 minutes
+	// Disable debug logging in 30 minutes
     if (settings.debugLoggingEnabled) runIn(1800, disableLogging)
 }
 
 def resetAlerts() {
-	//Clear current states
+	// Clear current states
+	resetAlertMotion()
+	resetAlertPresence()
+	resetAlertContact()
+}
+
+def resetAlertMotion() {
+	logInfo "MOTION SENSOR: Alert Inactive"
 	sendEvent(name: "motion", value: "$state.motionOFF")
+}
+
+def resetAlertPresence() {
+	logInfo "PRESENCE SENSOR: Alert Inactive"
 	sendEvent(name: "presence", value: "$state.presenceOFF")
-	sendEvent(name: "contact", value: "$state.contactOFF")	
+}
+
+def resetAlertContact() {
+	logInfo "CONTACT SENSOR: Alert Inactive"
+	sendEvent(name: "contact", value: "$state.contactOFF")
 }
 
 def parse(String description) {
@@ -151,27 +166,45 @@ def parse(String description) {
     logDebug groovy.xml.XmlUtil.escapeXml(msg.body)
 	
 	String eventType = body.eventType.text()
-	log.info "Event Type: ${eventType}"
-	state.lastEventType = eventType
+	logInfo "Event Type: ${eventType}"
 	
-    //log.info (eventType in settings.eventTypeFilterMotion)
+	
+	//state.lastEventType = eventType
+	
+	// Match Motion Filter
 	if ((eventType in settings.eventTypeFilterMotion) ^ settings.eventTypeInvertMotion) {
-		//log.info "Triggered"
-		log.info "Alert Active"
-		//sendEvent(name: "motion", value: "active")
-		sendEvent(name: "motion", value: "$motionON")
-		sendEvent(name: "presence", value: "$state.presenceON")
-		sendEvent(name: "contact", value: "$state.contactON")
-		//state.motionAlarm = true
+		logInfo "MOTION SENSOR: Alert Active"
+		sendEvent(name: "motion", value: "$state.motionON")
 		
-		//Trigger the inactive state in the future
-		//Note: Hikvision cameras appear to only send messages (~1/sec) when an alarm is in the active state.
-		//		We need to reset this virtual device's current state with a pre-determined
-		//		timeout period after the last alarm message was received.
-		runIn(2 + settings.resetTime.toInteger(), alertInactive, overwrite)
+		// Trigger the inactive state after [2 sec] + Alert Reset Time
+		runIn(2 + settings.resetTimeMotion.toInteger(), resetAlertMotion, overwrite)
 	}
 	else{
-		log.info "Filtered Event - Not Triggered"
+		logInfo "MOTION SENSOR: Filtered Event - Not Triggered"
+	}
+	
+	// Match Presence Filter
+	if ((eventType in settings.eventTypeFilterPresence) ^ settings.eventTypeInvertPresence) {
+		logInfo "PRESENCE SENSOR: Alert Active"
+		sendEvent(name: "presence", value: "$state.presenceON")
+		
+		// Trigger the inactive state after [2 sec] + Alert Reset Time
+		runIn(2 + settings.resetTimePresence.toInteger(), resetAlertPresence, overwrite)
+	}
+	else{
+		logInfo "PRESENCE SENSOR: Filtered Event - Not Triggered"
+	}
+	
+	// Match Contact Filter
+	if ((eventType in settings.eventTypeFilterContact) ^ settings.eventTypeInvertContact) {
+		logInfo "CONTACT SENSOR: Alert Active"
+		sendEvent(name: "contact", value: "$state.contactON")
+		
+		// Trigger the inactive state after [2 sec] + Alert Reset Time
+		runIn(2 + settings.resetTimeContact.toInteger(), resetAlertContact, overwrite)
+	}
+	else{
+		logInfo "CONTACT SENSOR: Filtered Event - Not Triggered"
 	}
 	
 }
@@ -190,13 +223,6 @@ void setNetworkAddress() {
 }
 
 
-void alertInactive() {
-	logDebug "HTTP Messages Timeout. Assuming Alert State Inactive"
-	log.info "Alert Inactive"
-	
-	resetAlerts()
-}
-
 
 private Integer convertHexToInt(hex) {
     return hex ? new BigInteger(hex[2..-1], 16) : 0
@@ -210,6 +236,12 @@ private String convertIPtoHex(ipAddress) {
 void disableLogging() {
 	log.info 'Logging disabled.'
 	device.updateSetting('debugLoggingEnabled',[value:'false',type:'bool'])
+}
+
+void logInfo(str) {
+    if (infoLoggingEnabled) {
+        log.info str
+    }
 }
 
 void logDebug(str) {
