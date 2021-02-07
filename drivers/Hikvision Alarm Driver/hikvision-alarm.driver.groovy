@@ -166,47 +166,55 @@ def parse(String description) {
     logDebug groovy.xml.XmlUtil.escapeXml(msg.body)
 	
 	String eventType = body.eventType.text()
-	logInfo "Event Type: ${eventType}"
+	String eventDateTime = body.dateTime.text()
+	logInfo "Event Type: ${eventType} (${eventDateTime})"
 	
 	
 	//state.lastEventType = eventType
 	
 	// Match Motion Filter
 	if ((eventType in settings.eventTypeFilterMotion) ^ settings.eventTypeInvertMotion) {
-		logInfo "MOTION SENSOR: Alert Active"
+		//logInfo "MOTION SENSOR: Alert Active"
+		infoMotion = "M[X] "
 		sendEvent(name: "motion", value: "$state.motionON")
 		
 		// Trigger the inactive state after [2 sec] + Alert Reset Time
 		runIn(2 + settings.resetTimeMotion.toInteger(), resetAlertMotion, overwrite)
 	}
 	else{
-		logInfo "MOTION SENSOR: Filtered Event - Not Triggered"
+		//logInfo "MOTION SENSOR: Filtered Event - Not Triggered"
+		infoMotion = "M[ ] "
 	}
 	
 	// Match Presence Filter
 	if ((eventType in settings.eventTypeFilterPresence) ^ settings.eventTypeInvertPresence) {
-		logInfo "PRESENCE SENSOR: Alert Active"
+		//logInfo "PRESENCE SENSOR: Alert Active"
+		infoPresence = "P[X] "
 		sendEvent(name: "presence", value: "$state.presenceON")
 		
 		// Trigger the inactive state after [2 sec] + Alert Reset Time
 		runIn(2 + settings.resetTimePresence.toInteger(), resetAlertPresence, overwrite)
 	}
 	else{
-		logInfo "PRESENCE SENSOR: Filtered Event - Not Triggered"
+		//logInfo "PRESENCE SENSOR: Filtered Event - Not Triggered"
+		infoPresence = "P[ ] "
 	}
 	
 	// Match Contact Filter
 	if ((eventType in settings.eventTypeFilterContact) ^ settings.eventTypeInvertContact) {
-		logInfo "CONTACT SENSOR: Alert Active"
+		//logInfo "CONTACT SENSOR: Alert Active"
+		infoContact = "C[X]"
 		sendEvent(name: "contact", value: "$state.contactON")
 		
 		// Trigger the inactive state after [2 sec] + Alert Reset Time
 		runIn(2 + settings.resetTimeContact.toInteger(), resetAlertContact, overwrite)
 	}
 	else{
-		logInfo "CONTACT SENSOR: Filtered Event - Not Triggered"
+		//logInfo "CONTACT SENSOR: Filtered Event - Not Triggered"
+		infoContact = "C[ ]"
 	}
 	
+	log.info "Triggered: " + infoMotion + infoPresence + infoContact
 }
 
 void setNetworkAddress() {
