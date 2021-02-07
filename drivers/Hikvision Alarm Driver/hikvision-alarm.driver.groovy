@@ -6,6 +6,20 @@
  *
  * Copyright 2021 Kenneth Leung (kleung1, ken830)
  * 
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
+ * If this is useful, consider a donation: https://paypal.me/kleung1
+ *
  * **Description **
  * Driver to receive alarms from Hikvision cameras with the "HTTP Listening"/"HTTP Data Transmission" feature.
  *
@@ -28,6 +42,9 @@
  *      - Alert Reset Time
  * - By default, the filters are empty and exclusive, so all event types will trigger all three sensors.
  * - To disable a sensor, leave the filter empty and make it inclusive
+ *
+ * ** Version History **
+ * 2021-02-07: v1.0.0 - Initial Release
  *
  */
 
@@ -169,12 +186,9 @@ def parse(String description) {
 	String eventDateTime = body.dateTime.text()
 	logInfo "Event Type: ${eventType} (${eventDateTime})"
 	
-	
-	//state.lastEventType = eventType
-	
+
 	// Match Motion Filter
 	if ((eventType in settings.eventTypeFilterMotion) ^ settings.eventTypeInvertMotion) {
-		//logInfo "MOTION SENSOR: Alert Active"
 		infoMotion = "M[X] "
 		sendEvent(name: "motion", value: "$state.motionON")
 		
@@ -182,13 +196,11 @@ def parse(String description) {
 		runIn(2 + settings.resetTimeMotion.toInteger(), resetAlertMotion, overwrite)
 	}
 	else{
-		//logInfo "MOTION SENSOR: Filtered Event - Not Triggered"
 		infoMotion = "M[ ] "
 	}
 	
 	// Match Presence Filter
 	if ((eventType in settings.eventTypeFilterPresence) ^ settings.eventTypeInvertPresence) {
-		//logInfo "PRESENCE SENSOR: Alert Active"
 		infoPresence = "P[X] "
 		sendEvent(name: "presence", value: "$state.presenceON")
 		
@@ -196,13 +208,11 @@ def parse(String description) {
 		runIn(2 + settings.resetTimePresence.toInteger(), resetAlertPresence, overwrite)
 	}
 	else{
-		//logInfo "PRESENCE SENSOR: Filtered Event - Not Triggered"
 		infoPresence = "P[ ] "
 	}
 	
 	// Match Contact Filter
 	if ((eventType in settings.eventTypeFilterContact) ^ settings.eventTypeInvertContact) {
-		//logInfo "CONTACT SENSOR: Alert Active"
 		infoContact = "C[X]"
 		sendEvent(name: "contact", value: "$state.contactON")
 		
@@ -210,7 +220,6 @@ def parse(String description) {
 		runIn(2 + settings.resetTimeContact.toInteger(), resetAlertContact, overwrite)
 	}
 	else{
-		//logInfo "CONTACT SENSOR: Filtered Event - Not Triggered"
 		infoContact = "C[ ]"
 	}
 	
