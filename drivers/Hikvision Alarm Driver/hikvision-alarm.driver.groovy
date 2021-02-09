@@ -21,7 +21,7 @@
  * If this is useful, consider a donation: https://paypal.me/kleung1
  *
  * **Description **
- * Driver to receive alarms from Hikvision cameras with the "HTTP Listening"/"HTTP Data Transmission" feature.
+ * Driver to receive alarms from Hikvision cameras with the "HTTP Listening"/"HTTP Data Transmission"/"Alarm Server" feature.
  *
  * ** Hikvision Camera Setup **
  * 1. Configuration -> Network -> Advanced Settings -> HTTP Listening: DestinationIP = <HubitatHubIP>, URL = "/", Port = 39501
@@ -45,6 +45,7 @@
  *
  * ** Version History **
  * 2021-02-07: v1.0.0 - Initial Release
+ * 2021-02-08: v1.0.1 - Updated Instructions to include the renamed "Alarm Server" feature. Moved preferences{} inside metadata{}.
  *
  */
 
@@ -67,32 +68,33 @@ metadata {
         command "resetAlerts"
 
     }
+
+	preferences {
+		input name: "hikIP", type: "string", title:"<b>Camera IP Address</b>", description: "<div><i></i></div><br>", required: true
+		
+		input name: "infoLoggingEnabled", type: "bool", title: "<b>Enable Info Logging</b>", description: "<div><i></i></div><br>", defaultValue: true
+		input name: "debugLoggingEnabled", type: "bool", title: "<b>Enable Debug Logging</b>", description: "<div><i>Disables in 15 minutes</i></div><br>", defaultValue: false
+
+		input name: "resetTimeMotion", type: "number", title:"<b>Motion Sensor</b>", description: "<div><i>Alert Reset Time</i></div><br>", range: "0..604800", defaultValue: 0
+		input name: "resetTimePresence", type: "number", title:"<b>Presence Sensor</b>", description: "<div><i>Alert Reset Time</i></div><br>", range: "0..604800", defaultValue: 0
+		input name: "resetTimeContact", type: "number", title:"<b>Contact Sensor</b>", description: "<div><i>Alert Reset Time</i></div><br>", range: "0..604800", defaultValue: 0
+		
+		input name: "eventTypeFilterMotion", type: "enum", title:"<b>Motion Sensor</b>", description: "<div><i>Event Type Filter(Multiple Selections Allowed)</i></div><br>", multiple: true , options: eventTypes
+		input name: "eventTypeInvertMotion", type: "bool", title:"<b>Motion Sensor</b>", description: "<div><i>Exclusive Filter (Trigger on All Events Except Those Selected)</i></div><br>", defaultValue: true
+		input name: "sensorInvertMotion",    type: "bool", title:"<b>Motion Sensor</b>", description: "<div><i>Invert Sensor Output State</i></div><br>", defaultValue: false
+		
+		input name: "eventTypeFilterPresence", type: "enum", title:"<b>Presence Sensor</b>", description: "<div><i>Event Type Filter(Multiple Selections Allowed)</i></div><br>", multiple: true , options: eventTypes
+		input name: "eventTypeInvertPresence", type: "bool", title:"<b>Presence Sensor</b>", description: "<div><i>Exclusive Filter(Trigger on All Events Except Those Selected)</i></div><br>", defaultValue: true
+		input name: "sensorInvertPresence",    type: "bool", title:"<b>Presence Sensor</b>", description: "<div><i>Invert Sensor Output State</i></div><br>", defaultValue: false
+		
+		input name: "eventTypeFilterContact", type: "enum", title:"<b>Contact Sensor</b>", description: "<div><i>Event Type Filter(Multiple Selections Allowed)</i></div><br>", multiple: true , options: eventTypes
+		input name: "eventTypeInvertContact", type: "bool", title:"<b>Contact Sensor</b>", description: "<div><i>Exclusive Filter(Trigger on All Events Except Those Selected)</i></div><br>", defaultValue: true
+		input name: "sensorInvertContact",    type: "bool", title:"<b>Contact Sensor</b>", description: "<div><i>Invert Sensor Output State</i></div><br>", defaultValue: false
+		
+	}
 }
-
-preferences {
-    input name: "hikIP", type: "string", title:"<b>Camera IP Address</b>", description: "<div><i></i></div><br>", required: true
-    
-	input name: "infoLoggingEnabled", type: "bool", title: "<b>Enable Info Logging</b>", description: "<div><i></i></div><br>", defaultValue: true
-	input name: "debugLoggingEnabled", type: "bool", title: "<b>Enable Debug Logging</b>", description: "<div><i>Disables in 15 minutes</i></div><br>", defaultValue: false
-
-	input name: "resetTimeMotion", type: "number", title:"<b>Motion Sensor</b>", description: "<div><i>Alert Reset Time</i></div><br>", range: "0..604800", defaultValue: 0
-	input name: "resetTimePresence", type: "number", title:"<b>Presence Sensor</b>", description: "<div><i>Alert Reset Time</i></div><br>", range: "0..604800", defaultValue: 0
-	input name: "resetTimeContact", type: "number", title:"<b>Contact Sensor</b>", description: "<div><i>Alert Reset Time</i></div><br>", range: "0..604800", defaultValue: 0
 	
-	input name: "eventTypeFilterMotion", type: "enum", title:"<b>Motion Sensor</b>", description: "<div><i>Event Type Filter(Multiple Selections Allowed)</i></div><br>", multiple: true , options: eventTypes
-	input name: "eventTypeInvertMotion", type: "bool", title:"<b>Motion Sensor</b>", description: "<div><i>Exclusive Filter (Trigger on All Events Except Those Selected)</i></div><br>", defaultValue: true
-	input name: "sensorInvertMotion",    type: "bool", title:"<b>Motion Sensor</b>", description: "<div><i>Invert Sensor Output State</i></div><br>", defaultValue: false
 	
-	input name: "eventTypeFilterPresence", type: "enum", title:"<b>Presence Sensor</b>", description: "<div><i>Event Type Filter(Multiple Selections Allowed)</i></div><br>", multiple: true , options: eventTypes
-	input name: "eventTypeInvertPresence", type: "bool", title:"<b>Presence Sensor</b>", description: "<div><i>Exclusive Filter(Trigger on All Events Except Those Selected)</i></div><br>", defaultValue: true
-	input name: "sensorInvertPresence",    type: "bool", title:"<b>Presence Sensor</b>", description: "<div><i>Invert Sensor Output State</i></div><br>", defaultValue: false
-	
-	input name: "eventTypeFilterContact", type: "enum", title:"<b>Contact Sensor</b>", description: "<div><i>Event Type Filter(Multiple Selections Allowed)</i></div><br>", multiple: true , options: eventTypes
-	input name: "eventTypeInvertContact", type: "bool", title:"<b>Contact Sensor</b>", description: "<div><i>Exclusive Filter(Trigger on All Events Except Those Selected)</i></div><br>", defaultValue: true
-	input name: "sensorInvertContact",    type: "bool", title:"<b>Contact Sensor</b>", description: "<div><i>Invert Sensor Output State</i></div><br>", defaultValue: false
-	
-}
-
 def installed() {
     logDebug "Hikvision Alarm device installed"
 	
