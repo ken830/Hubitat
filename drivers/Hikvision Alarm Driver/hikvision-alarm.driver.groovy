@@ -31,21 +31,27 @@
  * 1. Install driver on hub
  * 2. Add Virtual Device and Select this Driver 
  * 3. Enter Camera IP Address and click "Save Preferences"
- * 4. Optionally, configure the sensors (see notes below)
+ * 4. Optionally, configure the sensors and buttons (see notes below)
  *
  * ** Notes **
  * - Three independent sensor capabilities: Motion, Presence, & Contact
- * - Each sensor has the following independent settings:
- * 		- Event Type Filter
- *		- Inclusive vs Exclusive Filter Setting
- *		- Sensor State Inversion Setting
- *      - Alert Reset Time
- * - By default, the filters are empty and exclusive, so all event types will trigger all three sensors.
- * - To disable a sensor, leave the filter empty and make it inclusive
+ * 		- Each sensor has the following independent settings:
+ * 			- Event Type Filter
+ *			- Inclusive vs Exclusive Filter Setting
+ *			- Sensor State Inversion Setting
+ *      	- Alert Reset Time
+ * 		- By default, the filters are empty and exclusive, so all event types will trigger all three sensors.
+ * 		- To disable a sensor, leave the filter empty and make it inclusive
+ * - Six independent buttons
+ *		- Each button has the following independent settings:
+ *			- Event Type Filter
+ *			- Reset Time (for preventing multiple triggers in quick succession)
+ *		- By default, the buttons filters are empty, so nothing will trigger any of them
  *
  * ** Version History **
  * 2021-02-07: v1.0.0 - Initial Release
  * 2021-02-08: v1.0.1 - Updated Instructions to include the renamed "Alarm Server" feature. Moved preferences{} inside metadata{}.
+ * 2021-02-15: v1.1.0 - Significant update to add 6 customizable buttons in addition to existing 3 sensors.
  *
  */
 
@@ -54,18 +60,25 @@ import groovy.transform.Field
 
 metadata {
     definition(
-		name: "Hikvision Alarm",
+		name: "Hikvision Alarm Buttons",
 		namespace: "ken830",
 		author: "Kenneth Leung",
-		description: "HTTP Data Transmission Receiver - Alarm"
+		description: "HTTP Data Transmission Receiver - Alarm with Buttons"
 	) {
 		capability "Sensor"
 		
 		capability "MotionSensor"
 		capability "PresenceSensor"
 		capability "ContactSensor"
+		capability "PushableButton"
 		
         command "resetAlerts"
+		command "button1"
+		command "button2"
+		command "button3"
+		command "button4"
+		command "button5"
+		command "button6"
 
     }
 
@@ -75,10 +88,6 @@ metadata {
 		input name: "infoLoggingEnabled", type: "bool", title: "<b>Enable Info Logging</b>", description: "<div><i></i></div><br>", defaultValue: true
 		input name: "debugLoggingEnabled", type: "bool", title: "<b>Enable Debug Logging</b>", description: "<div><i>Disables in 15 minutes</i></div><br>", defaultValue: false
 
-		input name: "resetTimeMotion", type: "number", title:"<b>Motion Sensor</b>", description: "<div><i>Alert Reset Time</i></div><br>", range: "0..604800", defaultValue: 0
-		input name: "resetTimePresence", type: "number", title:"<b>Presence Sensor</b>", description: "<div><i>Alert Reset Time</i></div><br>", range: "0..604800", defaultValue: 0
-		input name: "resetTimeContact", type: "number", title:"<b>Contact Sensor</b>", description: "<div><i>Alert Reset Time</i></div><br>", range: "0..604800", defaultValue: 0
-		
 		input name: "eventTypeFilterMotion", type: "enum", title:"<b>Motion Sensor</b>", description: "<div><i>Event Type Filter(Multiple Selections Allowed)</i></div><br>", multiple: true , options: eventTypes
 		input name: "eventTypeInvertMotion", type: "bool", title:"<b>Motion Sensor</b>", description: "<div><i>Exclusive Filter (Trigger on All Events Except Those Selected)</i></div><br>", defaultValue: true
 		input name: "sensorInvertMotion",    type: "bool", title:"<b>Motion Sensor</b>", description: "<div><i>Invert Sensor Output State</i></div><br>", defaultValue: false
@@ -90,19 +99,39 @@ metadata {
 		input name: "eventTypeFilterContact", type: "enum", title:"<b>Contact Sensor</b>", description: "<div><i>Event Type Filter(Multiple Selections Allowed)</i></div><br>", multiple: true , options: eventTypes
 		input name: "eventTypeInvertContact", type: "bool", title:"<b>Contact Sensor</b>", description: "<div><i>Exclusive Filter(Trigger on All Events Except Those Selected)</i></div><br>", defaultValue: true
 		input name: "sensorInvertContact",    type: "bool", title:"<b>Contact Sensor</b>", description: "<div><i>Invert Sensor Output State</i></div><br>", defaultValue: false
+
+		input name: "resetTimeMotion", type: "number", title:"<b>Motion Sensor</b>", description: "<div><i>Alert Reset Time</i></div><br>", range: "0..604800", defaultValue: 0
+		input name: "resetTimePresence", type: "number", title:"<b>Presence Sensor</b>", description: "<div><i>Alert Reset Time</i></div><br>", range: "0..604800", defaultValue: 0
+		input name: "resetTimeContact", type: "number", title:"<b>Contact Sensor</b>", description: "<div><i>Alert Reset Time</i></div><br>", range: "0..604800", defaultValue: 0
 		
+		input name: "eventTypeFilterBtn1", type: "enum", title:"<b>Button 1</b>", description: "<div><i>Event Type Filter(Multiple Selections Allowed)</i></div><br>", multiple: true , options: eventTypes
+		input name: "eventTypeFilterBtn2", type: "enum", title:"<b>Button 2</b>", description: "<div><i>Event Type Filter(Multiple Selections Allowed)</i></div><br>", multiple: true , options: eventTypes
+		input name: "eventTypeFilterBtn3", type: "enum", title:"<b>Button 3</b>", description: "<div><i>Event Type Filter(Multiple Selections Allowed)</i></div><br>", multiple: true , options: eventTypes
+		
+		input name: "resetTimeBtn1", type: "number", title:"<b>Button 1</b>", description: "<div><i>Reset Time</i></div><br>", range: "0..604800", defaultValue: 0
+		input name: "resetTimeBtn2", type: "number", title:"<b>Button 2</b>", description: "<div><i>Reset Time</i></div><br>", range: "0..604800", defaultValue: 0
+		input name: "resetTimeBtn3", type: "number", title:"<b>Button 3</b>", description: "<div><i>Reset Time</i></div><br>", range: "0..604800", defaultValue: 0
+		
+		input name: "eventTypeFilterBtn4", type: "enum", title:"<b>Button 4</b>", description: "<div><i>Event Type Filter(Multiple Selections Allowed)</i></div><br>", multiple: true , options: eventTypes
+		input name: "eventTypeFilterBtn5", type: "enum", title:"<b>Button 5</b>", description: "<div><i>Event Type Filter(Multiple Selections Allowed)</i></div><br>", multiple: true , options: eventTypes
+		input name: "eventTypeFilterBtn6", type: "enum", title:"<b>Button 6</b>", description: "<div><i>Event Type Filter(Multiple Selections Allowed)</i></div><br>", multiple: true , options: eventTypes
+		
+		input name: "resetTimeBtn4", type: "number", title:"<b>Button 4</b>", description: "<div><i>Reset Time</i></div><br>", range: "0..604800", defaultValue: 0
+		input name: "resetTimeBtn5", type: "number", title:"<b>Button 5</b>", description: "<div><i>Reset Time</i></div><br>", range: "0..604800", defaultValue: 0
+		input name: "resetTimeBtn6", type: "number", title:"<b>Button 6</b>", description: "<div><i>Reset Time</i></div><br>", range: "0..604800", defaultValue: 0
+
 	}
 }
 	
 	
 def installed() {
-    logDebug "Hikvision Alarm device installed"
-	
+    logDebug "Hikvision Alarm with Buttons device installed"
+		
 	configure()
 }
 
 def updated() {
-	logDebug "Hikvision Alarm device updated"
+	logDebug "Hikvision Alarm with Buttons device updated"
 	
 	configure()
 }
@@ -144,9 +173,27 @@ def configure() {
 	state.eventFilterMotion = "$settings.eventTypeFilterMotion"
 	state.eventFilterPresence = "$settings.eventTypeFilterPresence"
 	state.eventFilterContact = "$settings.eventTypeFilterContact"
+	
+	state.eventTypeFilterBtn1 = "$settings.eventTypeFilterBtn1"
+	state.eventTypeFilterBtn2 = "$settings.eventTypeFilterBtn2"
+	state.eventTypeFilterBtn3 = "$settings.eventTypeFilterBtn3"
+	state.eventTypeFilterBtn4 = "$settings.eventTypeFilterBtn4"
+	state.eventTypeFilterBtn5 = "$settings.eventTypeFilterBtn5"
+	state.eventTypeFilterBtn6 = "$settings.eventTypeFilterBtn6"
+	
+	state.enableBtn1 = true
+	state.enableBtn2 = true
+	state.enableBtn3 = true
+	state.enableBtn4 = true
+	state.enableBtn5 = true
+	state.enableBtn6 = true
+	
 
 	// Clear all existing alerts
 	resetAlerts()
+	
+	// Set the number of buttons
+	sendEvent(name:"numberOfButtons", value:6)
 	
 	// Configure DNI
 	setNetworkAddress()
@@ -161,6 +208,31 @@ def resetAlerts() {
 	resetAlertPresence()
 	resetAlertContact()
 }
+
+def button1() {
+	sendEvent(name:"pushed", value:1, isStateChange: true)
+}
+
+def button2() {
+	sendEvent(name:"pushed", value:2, isStateChange: true)
+}
+
+def button3() {
+	sendEvent(name:"pushed", value:3, isStateChange: true)
+}
+
+def button4() {
+	sendEvent(name:"pushed", value:4, isStateChange: true)
+}
+
+def button5() {
+	sendEvent(name:"pushed", value:5, isStateChange: true)
+}
+
+def button6() {
+	sendEvent(name:"pushed", value:6, isStateChange: true)
+}
+
 
 def resetAlertMotion() {
 	logInfo "MOTION SENSOR: Alert Inactive"
@@ -225,7 +297,75 @@ def parse(String description) {
 		infoContact = "C[ ]"
 	}
 	
-	log.info "Triggered: " + infoMotion + infoPresence + infoContact
+	// Match Button Filters
+	if ((eventType in settings.eventTypeFilterBtn1) && state.enableBtn1) {
+		state.enableBtn1 = false
+		runIn(settings.resetTimeBtn1, restoreBtn1, overwrite)
+		
+		infoBtn1 = "1[X] "
+		sendEvent(name:"pushed", value:1, isStateChange: true)
+	}
+	else{
+		infoBtn1 = "1[ ] "
+	}
+	
+	if (eventType in settings.eventTypeFilterBtn2 && state.enableBtn2) {
+		state.enableBtn2 = false
+		runIn(settings.resetTimeBtn2, restoreBtn2, overwrite)
+		
+		infoBtn2 = "2[X] "
+		sendEvent(name:"pushed", value:2, isStateChange: true)
+	}
+	else{
+		infoBtn2 = "2[ ] "
+	}
+	
+	if ((eventType in settings.eventTypeFilterBtn3) && state.enableBtn3) {
+		state.enableBtn3 = false
+		runIn(settings.resetTimeBtn3, restoreBtn3, overwrite)
+		
+		infoBtn3 = "3[X] "
+		sendEvent(name:"pushed", value:3, isStateChange: true)
+	}
+	else{
+		infoBtn3 = "3[ ] "
+	}
+	
+	if (eventType in settings.eventTypeFilterBtn4 && state.enableBtn4) {
+		state.enableBtn4 = false
+		runIn(settings.resetTimeBtn4, restoreBtn4, overwrite)
+		
+		infoBtn4 = "4[X] "
+		sendEvent(name:"pushed", value:4, isStateChange: true)
+	}
+	else{
+		infoBtn4 = "4[ ] "
+	}
+	
+	if (eventType in settings.eventTypeFilterBtn5 && state.enableBtn5) {
+		state.enableBtn5 = false
+		runIn(settings.resetTimeBtn5, restoreBtn5, overwrite)
+		
+		infoBtn5 = "5[X] "
+		sendEvent(name:"pushed", value:5, isStateChange: true)
+	}
+	else{
+		infoBtn5 = "5[ ] "
+	}
+	if (eventType in settings.eventTypeFilterBtn6 && state.enableBtn6) {
+		state.enableBtn6 = false
+		runIn(settings.resetTimeBtn6, restoreBtn6, overwrite)
+		
+		infoBtn6 = "6[X]"
+		sendEvent(name:"pushed", value:6, isStateChange: true)
+	}
+	else{
+		infoBtn6 = "6[ ]"
+	}
+	
+	
+	logInfo "Triggered: " + infoMotion + infoPresence + infoContact
+	logInfo "ButtonsPushed: " + infoBtn1 + infoBtn2 + infoBtn3 + infoBtn4 + infoBtn5 + infoBtn6
 }
 
 void setNetworkAddress() {
@@ -241,6 +381,29 @@ void setNetworkAddress() {
 	state.camDNI = "$dni"
 }
 
+def restoreBtn1 () {
+	state.enableBtn1 = true
+}
+
+def restoreBtn2 () {
+	state.enableBtn2 = true
+}
+
+def restoreBtn3 () {
+	state.enableBtn3 = true
+}
+
+def restoreBtn4 () {
+	state.enableBtn4 = true
+}
+
+def restoreBtn5 () {
+	state.enableBtn5 = true
+}
+
+def restoreBtn6 () {
+	state.enableBtn6 = true
+}
 
 
 private Integer convertHexToInt(hex) {
